@@ -1,26 +1,103 @@
-import React from 'react';
-import { DatePicker, Space } from 'antd';
-import 'antd/dist/antd.css';
-import moment from 'moment';
+import React, { useState } from "react";
+import { Select, Input, Divider, Row, Col, DatePicker } from "antd";
+import { CreditCardFilled, SecurityScanOutlined, DashboardFilled, TeamOutlined, CalendarOutlined, EditOutlined } from "@ant-design/icons";
+import "antd/dist/antd.css";
+import { useHistory } from "react-router";
+import moment from "moment";
 
-const { RangePicker } = DatePicker;
+function Datepicker({ dateFilterHandler }) {
+    // => datepickerHandler
 
-function Datepicker({ dateFilter, startDate, endDate }) {
+    // hooks
+    let history = useHistory();
+    const { RangePicker } = DatePicker;
+    const [displayRangepicker, setDisplayRangePicker] = useState(false);
 
+    // Handle customer date selection
+    const customDateFilterHandler = (date) => {
+        if (date[0] && date[1]) {
+            dateFilterHandler([date[0].format(), date[1].format()]);
+        }
+    };
 
-  const dateFormat = 'YYYY-MM-DD';
+    // handle display of each dashboard info on screen
+    const handleDateClick = (date) => {
+        // route to the page containing data info
+        if (["customDateRange", "last7Days"].includes(date)) {
+            // check if date options were selected inst
+            switch (date) {
+                case "last7Days":
+                    setDisplayRangePicker(false);
+                    dateFilterHandler([moment().subtract(7, "days").set({ hour: 0, minute: 0, second: 0, millisecond: 0 }).format(), moment().format()]); // [startDate, endDate]
+                    break;
+                case "customDateRange":
+                    // display a pop up window to enter date range
+                    setDisplayRangePicker(true);
+                    break;
+                default:
+                    break;
+            }
+        }
+    };
 
-  return (
-    <div className="">
-      <RangePicker defaultValue={[moment(startDate, dateFormat), moment(endDate, dateFormat)]} showTime onChange={dateFilter} className="form-input pl-9 text-gray-500 hover:text-gray-600 font-medium focus:border-gray-300" />
+    // handle display  each dashboard info on screen based on menu selection
+    const handleMenuClick = (data) => {
+        // route to the page containing data info
+        if (["/", "accounts", "transactions", "sessions"].includes(data)) {
+            // make a route to the specified selection
+            history.push(`${data}`);
+        }
+    };
 
-      {/* <div className="absolute inset-0 right-auto flex items-center pointer-events-none">
-        <svg className="w-4 h-4 fill-current text-gray-500 ml-3" viewBox="0 0 16 16">
-          <path d="M15 2h-2V0h-2v2H9V0H7v2H5V0H3v2H1a1 1 0 00-1 1v12a1 1 0 001 1h14a1 1 0 001-1V3a1 1 0 00-1-1zm-1 12H2V6h12v8z" />
-        </svg>
-      </div> */}
-    </div>
-  );
+    return (
+        <div className="">
+            <Divider orientation="right">Filter Data based on Date Range</Divider>
+            <Row justify="end" align="middle" gutter={{ xs: 4, sm: 4, md: 4, lg: 4 }}>
+                {displayRangepicker && (
+                    <Col className="gutter-row" xs={{ span: 12, puah: 16 }} sm={{ span: 12, push: 0 }} md={12} lg={16} xl={18}>
+                        <RangePicker showTime onChange={customDateFilterHandler} className="form-input text-gray-500 hover:text-gray-600 font-medium focus:border-gray-300 float-right" />
+                    </Col>
+                )}
+                <Col className="gutter-row" xs={{ span: 12, push: 0 }} sm={{ span: 12, push: 0 }} md={13} lg={10} xl={5}>
+                    <Input.Group className="float-right">
+                        <Select defaultValue="Select Date Range" onChange={handleDateClick}>
+                            <Select.Option value="last7Days">
+                                <CalendarOutlined /> Last 7 Days
+                            </Select.Option>
+                            <Select.Option value="customDateRange">
+                                <EditOutlined /> Custom Range
+                            </Select.Option>
+                        </Select>
+                    </Input.Group>
+                </Col>
+                <Col className="gutter-row" justify="end" xs={{ span: 24, push: 16 }} sm={{ span: 24, push: 0 }} md={24} lg={1} xl={1}>
+                    <Input.Group className="float-right">
+                        <Select
+                            defaultValue={
+                                <span>
+                                    <DashboardFilled /> Dashboard
+                                </span>
+                            }
+                            onChange={handleMenuClick}
+                        >
+                            <Select.Option value="/">
+                                <DashboardFilled /> Dashboard
+                            </Select.Option>
+                            <Select.Option value="accounts">
+                                <CreditCardFilled /> Accounts
+                            </Select.Option>
+                            <Select.Option value="transactions">
+                                <SecurityScanOutlined /> Transactions
+                            </Select.Option>
+                            <Select.Option value="sessions">
+                                <TeamOutlined /> Sessions
+                            </Select.Option>
+                        </Select>
+                    </Input.Group>
+                </Col>
+            </Row>
+        </div>
+    );
 }
 
 export default Datepicker;

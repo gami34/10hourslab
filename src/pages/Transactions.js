@@ -2,30 +2,29 @@ import React, { useEffect, useState } from "react";
 
 import Datepicker from "../partials/actions/Datepicker";
 import DisplayDashCard from "../partials/dashboard/DisplayDashCard";
-import AccountsTable from "../partials/dashboard/AccountsTable";
+import TransactionsTable from "../partials/dashboard/TransactionsTable";
 import ColumnChart from "../partials/dashboard/ColumnChart";
 
 import { useQuery } from "@apollo/client";
 import _ from "lodash";
-import { ALL_ACCOUNTS } from "../graphql/queries";
+import { ALL_TRANSACTIONS } from "../graphql/queries";
 import moment from "moment";
-import { generateChartData } from "../utils/generateChartData.util";
+import { generateTransChartData } from "../utils/generateTransChartData.util";
+import { generateNumTransChartData } from "../utils/generateNumTransChartData.util";
 
-// Import utilities
-// import { tailwindConfig } from "../utils/Utils";
-
-function Accounts() {
+function Transactions() {
     const [startDate, setStartDate] = useState("2021-07-09T00:00:00.000Z"); // most recent date from the dataset
     const [endDate, setEndDate] = useState("2021-09-16T08:49:43.991Z");
 
-    const [allAccounts, setAllAccounts] = useState([]);
-    const [noAccounts, setNoAccounts] = useState(0);
-    const [noCheques, setNoCheques] = useState(0);
-    const [noSavings, setNoSavings] = useState(0);
+    const [allTransactions, setAllTransactions] = useState([]);
+    const [noTransactions, setNoTransactions] = useState(0);
+    const [noDebits, setNoDebits] = useState(0);
+    const [noCredits, setNoCredits] = useState(0);
+    const [noTransactionChartData, setNoTransactionChartData] = useState({});
     const [chartData, setChartData] = useState([]);
 
     // fetch all acounts data from the graphql server for the first 7days
-    const { data, loading } = useQuery(ALL_ACCOUNTS, {
+    const { data, loading } = useQuery(ALL_TRANSACTIONS, {
         variables: {
             // fetch the first 7 days data
             filter: { created_at_gte: startDate, created_at_lte: endDate },
@@ -43,12 +42,15 @@ function Accounts() {
     };
 
     useEffect(() => {
-        if (data?.allAccounts) {
-            setChartData(generateChartData(data.allAccounts));
-            setAllAccounts(data.allAccounts);
-            setNoAccounts(data.allAccounts.length);
-            setNoCheques(_.filter(data.allAccounts, { type: "cheque" }).length);
-            setNoSavings(_.filter(data.allAccounts, { type: "savings" }).length);
+        if (data?.allTransactions) {
+            // generate credit vs day/Month
+            setChartData(generateTransChartData(_.filter(data.allTransactions, { type: "credit" }), "credit", "amount"));
+            // generate transaction vs Branch data
+            setNoTransactionChartData(generateNumTransChartData(data.allTransactions));
+            setAllTransactions(data.allTransactions);
+            setNoTransactions(data.allTransactions.length);
+            setNoDebits(_.filter(data.allTransactions, { type: "debit" }).length);
+            setNoCredits(_.filter(data.allTransactions, { type: "credit" }).length);
         }
     }, [data]);
 
@@ -68,16 +70,16 @@ function Accounts() {
                     <div className="grid grid-cols-12 gap-6">
                         {/* No of Accounts, Savings and Cheques */}
                         <DisplayDashCard
-                            displayHeader={"Accounts"}
+                            displayHeader={"Total Transactions"}
                             displayLowerHeader={`${moment(startDate).format("MMM Do YY")} to ${moment(endDate).format("MMM Do YY")}`}
-                            displayTotal={`${noAccounts} Total Accounts`}
-                            subDisplayText={`${noCheques} cheque  & ${noSavings} Savings Accounts`}
+                            displayTotal={`${noTransactions} Transactions Fetched`}
+                            subDisplayText={`${noDebits} Debits  & ${noCredits} Credits Transactions`}
                         />
-                        {console.log(chartData)}
-                        {/* Bar chart (Direct vs Indirect) */}
-                        <ColumnChart config={chartData} label="No.Accounts Fetched Vs Day/Month" />
+                        {/* Bar chart (credit vs day/Month) */}
+                        <ColumnChart config={chartData} label="Credit Amount Fetched Vs Day/Month" />
+                        <ColumnChart config={noTransactionChartData} fullWidth={true} label="No.Transaction Fetched Vs Day/Month" />
                         {/* Table (Top Channels) */}
-                        <AccountsTable data={allAccounts} />
+                        <TransactionsTable data={allTransactions} />
                     </div>
                 </>
             )}
@@ -85,4 +87,4 @@ function Accounts() {
     );
 }
 
-export default Accounts;
+export default Transactions;
