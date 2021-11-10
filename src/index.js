@@ -9,7 +9,7 @@ import { ApolloClient, InMemoryCache, ApolloProvider } from "@apollo/client";
 // import { onError } from "@apollo/client/link/error";
 
 // backend for this assignment
-const backendGraphql = "http://localhost:8080/";
+const backendGraphql = "https://grapqhpoweredbackendbankdata.herokuapp.com/";
 
 // Error handler system
 // const errorHandler = () =>
